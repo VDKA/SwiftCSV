@@ -12,9 +12,9 @@ public class CSV {
 	public var headers: [String] = []
 	public var rows: [Dictionary<String, String>] = []
 	public var columns = Dictionary<String, [String]>()
-	var delimiter = NSCharacterSet(charactersInString: ",")
+	var delimiter: Character = ","
 	
-	public init(string string: String, delimiter: NSCharacterSet = NSCharacterSet(charactersInString: ",")) {
+	public init(string: String, delimiter: Character = ",") {
 		self.delimiter = delimiter
 		
 		let newline = NSCharacterSet.newlineCharacterSet()
@@ -26,13 +26,32 @@ public class CSV {
 		self.columns = self.parseColumns(fromLines: lines)
 	}
 	
-	public convenience init?(contentsOfURL url: NSURL, delimiter: NSCharacterSet = NSCharacterSet(charactersInString: ","), encoding: UInt = NSUTF8StringEncoding) throws {
+	public convenience init?(contentsOfURL url: NSURL, delimiter: Character = ",", encoding: UInt = NSUTF8StringEncoding) throws {
 		let csvString = try String(contentsOfURL: url, encoding: encoding)
 		self.init(string: csvString, delimiter: delimiter)
 	}
 	
+	public class func parseLine(line: String, delimiter: Character = ",") -> [String] {
+		
+		var columns: [String] = [""]
+		
+		var inQuotes = false
+		for char in line.characters {
+			switch char {
+			case delimiter:
+				inQuotes ? columns[columns.indices.last!].append(char) : columns.append("")
+			case "\"":
+				inQuotes = !inQuotes
+			default:
+				columns[columns.indices.last!].append(char)
+			}
+		}
+		
+		return columns
+	}
+	
 	func parseHeaders(fromLines lines: [String]) -> [String] {
-		return lines[0].componentsSeparatedByCharactersInSet(self.delimiter)
+		return CSV.parseLine(lines[0], delimiter: delimiter)
 	}
 	
 	func parseRows(fromLines lines: [String]) -> [Dictionary<String, String>] {
@@ -44,7 +63,8 @@ public class CSV {
 			}
 			
 			var row = Dictionary<String, String>()
-			let values = line.componentsSeparatedByCharactersInSet(self.delimiter)
+//			let values = line.componentsSeparatedByCharactersInSet(self.delimiter)
+			let values = CSV.parseLine(line, delimiter: delimiter)
 			for (index, header) in self.headers.enumerate() {
 				if index < values.count {
 					row[header] = values[index]
