@@ -17,21 +17,21 @@ public class CSV {
 	public init(string: String, delimiter: Character = ",") {
 		self.delimiter = delimiter
 		
-		let newline = NSCharacterSet.newlineCharacterSet()
+        let newline = NSCharacterSet.newlines
 		var lines: [String] = []
-		string.stringByTrimmingCharactersInSet(newline).enumerateLines { line, stop in lines.append(line) }
+        string.trimmingCharacters(in: newline).enumerateLines(invoking: { line, stop in lines.append(line) })
 		
 		self.headers = self.parseHeaders(fromLines: lines)
 		self.rows = self.parseRows(fromLines: lines)
 		self.columns = self.parseColumns(fromLines: lines)
 	}
+
+    public convenience init?(contentsOf url: URL, delimiter: Character = ",", encoding: String.Encoding = .utf8) throws {
+        let csv = try String(contentsOf: url, encoding: encoding)
+        self.init(string: csv, delimiter: delimiter)
+    }
 	
-	public convenience init?(contentsOfURL url: NSURL, delimiter: Character = ",", encoding: UInt = NSUTF8StringEncoding) throws {
-		let csvString = try String(contentsOfURL: url, encoding: encoding)
-		self.init(string: csvString, delimiter: delimiter)
-	}
-	
-	public class func parseLine(line: String, delimiter: Character = ",") -> [String] {
+	public class func parse(line: String, delimiter: Character = ",") -> [String] {
 		
 		var columns: [String] = [""]
 		
@@ -51,21 +51,21 @@ public class CSV {
 	}
 	
 	func parseHeaders(fromLines lines: [String]) -> [String] {
-		return CSV.parseLine(lines[0], delimiter: delimiter)
+        return CSV.parse(line: lines[0], delimiter: delimiter)
 	}
 	
 	func parseRows(fromLines lines: [String]) -> [Dictionary<String, String>] {
 		var rows: [Dictionary<String, String>] = []
 		
-		for (lineNumber, line) in lines.enumerate() {
+		for (lineNumber, line) in lines.enumerated() {
 			if lineNumber == 0 {
 				continue
 			}
 			
 			var row = Dictionary<String, String>()
 //			let values = line.componentsSeparatedByCharactersInSet(self.delimiter)
-			let values = CSV.parseLine(line, delimiter: delimiter)
-			for (index, header) in self.headers.enumerate() {
+			let values = CSV.parse(line: line, delimiter: delimiter)
+			for (index, header) in self.headers.enumerated() {
 				if index < values.count {
 					row[header] = values[index]
 				} else {
